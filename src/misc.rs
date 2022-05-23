@@ -16,3 +16,13 @@ pub fn softplus(x: f64) -> f64 {
         x.exp().ln_1p()
     }
 }
+
+/// Iterative methods
+pub struct Iterative<S, F> {
+    state: S,
+    iteration: F,
+}
+impl<S, F, T> Iterative<S, F>
+    where F: Fn(&mut S) -> T {
+
+}

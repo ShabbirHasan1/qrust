@@ -1,109 +1,14 @@
-//! Definition of probabilities, distributions and utilities.
-//! # Examples
-//! ```
-//! use qrust::proba::*;
-//!
-//! let n = normal(1.0, 4.5);
-//! assert_eq!(n.std(), 4.5);
-//! assert_eq!(n.mean(), 1.0);
-//!
-//! let u = uniform(3.0, 5.0);
-//! assert_eq!(u.median(), 4.0);
-//! ```
-//!
-//! The distributions also all come with computation of the both their PDF and CDF over R:
-//! ```
-//! use std::f64::consts::PI;
-//! use qrust::proba::*;
-//!
-//! let n = normal(1.0, 1.0);
-//! assert_eq!(n.cdf(1.0), 0.5);
-//! // PDF of the normal variable is exp{-(x-mu)^2/sigma^2} / sqrt{2 * PI * sigma^2}
-//! assert!((n.pdf(1.0) - (1.0 / (2. * PI * 1.0).sqrt())).abs() < 1e-12);
-//!
-//! let x = lognormal(0.0, 1.0);
-//! let y = lognormal(0.0, 0.25);
-//! assert_eq!(x.cdf(1.0), y.cdf(1.0));
-//! assert!(x.cdf(0.5) > y.cdf(0.5));
-//! assert!(x.cdf(1.5) < y.cdf(1.5));
-//! ```
-//!
-//! The variables can also be shifted and scaled arbitrarily:
-//! ```
-//! use qrust::proba::*;
-//!
-//! let u = uniform(0.0, 1.0);
-//! let m = u.mean();
-//! let s = u.std();
-//! // v := 3 * ((2 * u) - 1.5) + 2.0 -> 6. * u - 2.5
-//! let v = u.scale(2.0).shift(-1.5).scale(3.0).shift(2.0);
-//! assert_eq!(6. * m - 2.5, v.mean());
-//! assert_eq!(6. * s, v.std());
-//! ```
-use std::cmp::Ordering;
-use std::convert::TryFrom;
+//! Definition of a marginal distribution of probability
 use std::f64::consts::{FRAC_1_SQRT_2, FRAC_2_SQRT_PI, LN_2, PI, SQRT_2};
 use special::Error;
 use crate::misc::softplus;
+use super::Proba;
 
 /// 1 / (sqrt(2 * pi))
 const FRAC_1_SQRT_2_PI: f64 = FRAC_2_SQRT_PI * FRAC_1_SQRT_2 / 2.0;
 /// ln(pi)
 const LN_PI: f64 = 1.1447298858494001638774761886452324688434600830078125;
 
-/// Represents a probability in [0; 1]
-/// TODO: make this an integer or something
-#[derive(Clone, Copy, Debug)]
-pub struct Proba(f64);
-impl Proba {
-    /// The Half probability
-    pub const HALF: Proba = Proba(0.5);
-    /// The One (100%) probability
-    pub const ONE: Proba = Proba(1.0);
-    /// The Zero (0.0%) probability
-    pub const ZERO: Proba = Proba(0.0);
-    /// The complement to 1 of the probability
-    pub fn complement(&self) -> Proba {
-        Proba(1.0 - self.0)
-    }
-    /// Conversion to a float64
-    pub fn as_f64(&self) -> f64 {
-        self.0
-    }
-    pub fn from_f64(x: f64) -> Proba {
-        Self::try_from(x).expect("Invalid value")
-    }
-}
-impl TryFrom<f64> for Proba {
-    type Error = String;
-    fn try_from(value: f64) -> Result<Self, Self::Error> {
-        if value >= 0.0 && value <= 1.0 {
-            Ok(Proba(value))
-        } else {
-            Err(format!("Invalid probability: {}", value))
-        }
-    }
-}
-impl Into<f64> for Proba {
-    fn into(self) -> f64 {
-        self.as_f64()
-    }
-}
-impl PartialEq<f64> for Proba {
-    fn eq(&self, other: &f64) -> bool {
-        self.0.eq(other)
-    }
-}
-impl PartialEq<Proba> for Proba {
-    fn eq(&self, other: &Proba) -> bool {
-        self.eq(&other.0)
-    }
-}
-impl PartialOrd<Proba> for Proba {
-    fn partial_cmp(&self, other: &Proba) -> Option<Ordering> {
-        self.0.partial_cmp(&other.0)
-    }
-}
 /// Represents a one-dimensional marginal distribution of probability over R,
 /// with finite first moment.
 pub trait Marginal {
@@ -219,8 +124,8 @@ pub trait Marginal {
     /// assert_eq!(n.cdf(0.0), 0.5);
     /// // The standard normal is a symmetrical distribution
     /// assert!((n.cdf(-1.0).as_f64() + n.cdf(1.0).as_f64() - 1.0).abs() < 1e-15);
-    /// // The qrustile of the distribution is the inverse of the CDF
-    /// let x = n.qrustile(Proba::from_f64(0.35));
+    /// // The quantile of the distribution is the inverse of the CDF
+    /// let x = n.quantile(Proba::from_f64(0.35));
     /// assert!((n.cdf(x).as_f64() - 0.35).abs() < 1e-15);
     /// ```
     fn cdf(&self, x: f64) -> Proba;
@@ -253,21 +158,21 @@ pub trait Marginal {
     /// assert_eq!(n.cdf_complement(0.0), 0.5);
     /// // The standard normal is a symmetrical distribution
     /// assert!((n.cdf_complement(-1.0).as_f64() + n.cdf_complement(1.0).as_f64() - 1.0).abs() < 1e-15);
-    /// // The qrustile of the distribution is the inverse of the CDF
-    /// let x = n.qrustile(Proba::from_f64(0.65));
+    /// // The quantile of the distribution is the inverse of the CDF
+    /// let x = n.quantile(Proba::from_f64(0.65));
     /// assert!((n.cdf_complement(x).as_f64() - (1.0 - 0.65)).abs() < 1e-15);
     /// ```
     fn cdf_complement(&self, x: f64) -> Proba {
         self.cdf(x).complement()
     }
-    /// The qrustile is essentially the inverse of the CDF - it is defined as the number `x` such
+    /// The quantile is essentially the inverse of the CDF - it is defined as the number `x` such
     /// that the probability of the distribution being less than `x` is equal to the input `p`.
     ///
     /// In case where multiple such values are defined, the implementor is free to choose whichever
     /// value makes more sense.
     ///
     /// # Arguments
-    /// * p - The probability in [0; 1] for which the qrustile is required
+    /// * p - The probability in [0; 1] for which the quantile is required
     ///
     /// # Returns
     /// * x - Value in R such that $P(D < x) = p$, where $D$ follows that marginal distribution
@@ -278,13 +183,13 @@ pub trait Marginal {
     ///
     /// let n = StandardNormal;
     /// // The median is the 50th percentile
-    /// assert_eq!(n.qrustile(Proba::HALF), n.median());
+    /// assert_eq!(n.quantile(Proba::HALF), n.median());
     /// // The 2.5th percentile is approximatively -1.96 (to two decimal places)
-    /// assert!((n.qrustile(Proba::from_f64(0.025)) + 1.96).abs() < 1e-2);
+    /// assert!((n.quantile(Proba::from_f64(0.025)) + 1.96).abs() < 1e-2);
     /// ```
-    fn qrustile(&self, p: Proba) -> f64;
-    fn qrustile_f64(&self, f: f64) -> Result<f64, <Proba as TryFrom<f64>>::Error> {
-        Proba::try_from(f).map(|p| self.qrustile(p))
+    fn quantile(&self, p: Proba) -> f64;
+    fn quantile_f64(&self, f: f64) -> Result<f64, <Proba as TryFrom<f64>>::Error> {
+        Proba::try_from(f).map(|p| self.quantile(p))
     }
     /// The median is simply an alias for the 50th percentile.
     ///
@@ -293,13 +198,13 @@ pub trait Marginal {
     /// use qrust::proba::{Uniform01, StandardNormal, Marginal, Proba};
     ///
     /// let u = Uniform01;
-    /// assert_eq!(u.qrustile(Proba::HALF), u.median());
+    /// assert_eq!(u.quantile(Proba::HALF), u.median());
     /// assert_eq!(u.median(), 0.5);
     /// let n = StandardNormal;
     /// assert_eq!(n.median(), 0.0);
     /// ```
     fn median(&self) -> f64 {
-        self.qrustile(Proba::HALF)
+        self.quantile(Proba::HALF)
     }
     /// Shifts the distribution by a constant amount.
     ///
@@ -434,8 +339,8 @@ impl<D: Marginal> Marginal for Shifted<D> {
     fn cdf(&self, x: f64) -> Proba {
         self.base.cdf(x - self.shift)
     }
-    fn qrustile(&self, p: Proba) -> f64 {
-        self.base.qrustile(p) + self.shift
+    fn quantile(&self, p: Proba) -> f64 {
+        self.base.quantile(p) + self.shift
     }
     fn median(&self) -> f64 {
         self.base.median() + self.shift
@@ -480,8 +385,8 @@ impl<D: Marginal> Marginal for Scaled<D> {
     fn cdf(&self, x: f64) -> Proba {
         self.base.cdf(x / self.scale)
     }
-    fn qrustile(&self, p: Proba) -> f64 {
-        self.base.qrustile(p) * self.scale
+    fn quantile(&self, p: Proba) -> f64 {
+        self.base.quantile(p) * self.scale
     }
     fn median(&self) -> f64 {
         self.base.median() * self.scale
@@ -544,7 +449,7 @@ impl Marginal for Uniform01 {
             }
         }
     }
-    fn qrustile(&self, p: Proba) -> f64 {
+    fn quantile(&self, p: Proba) -> f64 {
         p.into()
     }
     fn median(&self) -> f64 {
@@ -614,7 +519,7 @@ impl Marginal for StandardNormal {
     fn cdf(&self, x: f64) -> Proba {
         Proba::try_from(0.5 * (1. + (x * FRAC_1_SQRT_2).error())).expect("unreachable")
     }
-    fn qrustile(&self, p: Proba) -> f64 {
+    fn quantile(&self, p: Proba) -> f64 {
         SQRT_2 * (2. * p.as_f64() - 1.).inv_error()
     }
     fn median(&self) -> f64 {
@@ -722,8 +627,8 @@ impl Marginal for LogNormal {
         }
         Proba::from_f64((((x.ln() - self.mu()) / (SQRT_2 * self.sigma())).error() + 1.) / 2.)
     }
-    /// qrustile of the distribution
-    fn qrustile(&self, q: Proba) -> f64 {
+    /// quantile of the distribution
+    fn quantile(&self, q: Proba) -> f64 {
         (self.mu() + SQRT_2 * self.sigma() * (2. * q.as_f64() - 1.).inv_error()).exp()
     }
     /// Median of the distribution
@@ -777,7 +682,7 @@ pub fn normal(mu: f64, sigma: f64) -> Normal {
 /// assert_eq!(u.cdf(10.0), 0.0);
 /// assert_eq!(u.cdf(17.0), 0.7);
 /// assert_eq!(u.cdf(20.0), 1.0);
-/// assert_eq!(u.qrustile_f64(0.25).unwrap(), 12.5);
+/// assert_eq!(u.quantile_f64(0.25).unwrap(), 12.5);
 /// ```
 pub fn uniform(a: f64, b: f64) -> impl Marginal {
     Uniform::new(a, b)
