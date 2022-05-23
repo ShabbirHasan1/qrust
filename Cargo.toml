@@ -1,0 +1,22 @@
+[package]
+name = "qrust"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+approx = "^0.5"
+num = "^0.4"
+rayon = "^1.5.0"
+serde = { version = "^1.0", features = ["derive"]}
+special = "^0.8.1"
+
+[dependencies.ndarray]
+version = "^0.15.0"
+features = ["rayon", "serde", "approx"]
+
+[dependencies.ndarray-linalg]
+version = "^0.14"
+default_features = true
+features = []  # "intel-mkl"]
