@@ -3,9 +3,10 @@
 //!
 //! This library is a collection of miscellaneous numerical/quantitative tools for Rust
 
-pub mod misc;
+pub mod optim;
 pub mod pricing;
 pub mod proba;
+pub mod special;
 
 /// Internal utilities for testing
 #[cfg(test)]

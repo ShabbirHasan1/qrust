@@ -1,7 +1,7 @@
 //! Definition of a marginal distribution of probability
 use std::f64::consts::{FRAC_1_SQRT_2, FRAC_2_SQRT_PI, LN_2, PI, SQRT_2};
 use special::Error;
-use crate::misc::softplus;
+use crate::special::softplus;
 use super::Proba;
 
 /// 1 / (sqrt(2 * pi))
