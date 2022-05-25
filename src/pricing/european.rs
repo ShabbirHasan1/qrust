@@ -86,13 +86,13 @@ pub mod blackschole {
     /// Computes the greeks of an European option using the Black-Scholes model
     ///
     /// # Arguments
-    ///  * s - the spot value of the stock
-    ///  * k - the strike of the option
-    ///  * r - the interest rate, per year
-    ///  * q - the dividend rate, per year
-    ///  * sigma - the annualised volatility of the option
-    ///  * ttm - the time-to-maturity of the option, expressed in years
-    ///  * opt - whether the option is a call or a put
+    ///  * `s` - the spot value of the stock
+    ///  * `k` - the strike of the option
+    ///  * `r` - the interest rate, per year
+    ///  * `q` - the dividend rate, per year
+    ///  * `sigma` - the annualised volatility of the option
+    ///  * `ttm` - the time-to-maturity of the option, expressed in years
+    ///  * `opt` - whether the option is a call or a put
     ///
     /// # Returns
     /// The greeks for the described option
@@ -127,20 +127,20 @@ pub mod blackschole {
     /// Halley method
     ///
     /// # Arguments
-    ///  * pv - the observed option price
-    ///  * s - the current spot price of the underlying
-    ///  * k - the strike of the option
-    ///  * r - the interest-rate, per year
-    ///  * q - the dividend rate, per year
-    ///  * guess - the initial guess for the volatility, annualised
-    ///  * ttm - the time-to-maturity of the option, in years
-    ///  * opt - whether the option is a call or a put
-    ///  * max_iter - the maximum number of iterations allowed
-    ///  * tol - the numerical tolerance: if the derived option price is within `tol`
+    ///  * `pv` - the observed option price
+    ///  * `s` - the current spot price of the underlying
+    ///  * `k` - the strike of the option
+    ///  * `r` - the interest-rate, per year
+    ///  * `q` - the dividend rate, per year
+    ///  * `guess` - the initial guess for the volatility, annualised
+    ///  * `ttm` - the time-to-maturity of the option, in years
+    ///  * `opt` - whether the option is a call or a put
+    ///  * `max_iter` - the maximum number of iterations allowed
+    ///  * `tol` - the numerical tolerance: if the derived option price is within `tol`
     ///          of the observed price `obs`, then convergence is declared.
     ///
     /// # Returns
-    ///  * roots - the root found, if any. Callers can call the `success` method of the
+    ///  * `roots` - the root found, if any. Callers can call the `success` method of the
     ///            returned struct to know whether the root-finding succeeded
     pub fn implied(
         pv: f64,
@@ -233,12 +233,12 @@ pub mod black {
     /// Computes the greeks of an European option using the Black model
     ///
     /// # Arguments
-    ///  * f - the current value of the forward
-    ///  * k - the strike of the option
-    ///  * r - the interest rate, per year
-    ///  * sigma - the annualised volatility of the option
-    ///  * ttm - the time-to-maturity of the option, expressed in years
-    ///  * opt - whether the option is a call or a put
+    ///  * `f` - the current value of the forward
+    ///  * `k` - the strike of the option
+    ///  * `r` - the interest rate, per year
+    ///  * `sigma` - the annualised volatility of the option
+    ///  * `ttm` - the time-to-maturity of the option, expressed in years
+    ///  * `opt` - whether the option is a call or a put
     ///
     /// # Returns
     /// The greeks for the described option
@@ -272,19 +272,19 @@ pub mod black {
     /// Halley method
     ///
     /// # Arguments
-    ///  * pv - the observed option price
-    ///  * f - the value of the forward corresponding to the maturity of the option
-    ///  * k - the strike of the option
-    ///  * r - the interest-rate, per year
-    ///  * guess - the initial guess for the volatility, annualised
-    ///  * ttm - the time-to-maturity of the option, in years
-    ///  * opt - whether the option is a call or a put
-    ///  * max_iter - the maximum number of iterations allowed
-    ///  * tol - the numerical tolerance: if the derived option price is within `tol`
+    ///  * `pv` - the observed option price
+    ///  * `f` - the value of the forward corresponding to the maturity of the option
+    ///  * `k` - the strike of the option
+    ///  * `r` - the interest-rate, per year
+    ///  * `guess` - the initial guess for the volatility, annualised
+    ///  * `ttm` - the time-to-maturity of the option, in years
+    ///  * `opt` - whether the option is a call or a put
+    ///  * `max_iter` - the maximum number of iterations allowed
+    ///  * `tol` - the numerical tolerance: if the derived option price is within `tol`
     ///          of the observed price `obs`, then convergence is declared.
     ///
     /// # Returns
-    ///  * roots - the root found, if any. Callers can call the `success` method of the
+    ///  * `roots` - the root found, if any. Callers can call the `success` method of the
     ///            returned struct to know whether the root-finding succeeded
     pub fn implied(
         pv: f64,
