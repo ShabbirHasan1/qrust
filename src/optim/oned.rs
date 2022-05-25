@@ -1,26 +1,5 @@
 //! One-dimensional optimisation and root-finding
-
-/// The errors which can be raised when doing numerical optimisation
-#[derive(Clone, Debug)]
-pub enum Error {
-    /// A numerical error (typically, division by zero) prevents the algorithm to run
-    NumericalError,
-    /// The maximum number of iterations has been reached
-    MaxIterations,
-}
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Error::NumericalError => write!(f, "Numerical error"),
-            Error::MaxIterations => write!(f, "Maximum number of iterations reached"),
-        }
-    }
-}
-impl std::error::Error for Error {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        None
-    }
-}
+use super::Error;
 
 /// The result of a 1D root-finding algorithm
 pub struct RootFinding1d {
@@ -101,7 +80,9 @@ pub fn newton_raphson<F>(f: F, guess: f64, max_iter: usize, tol: f64) -> RootFin
                 x,
                 fx,
                 niter,
-                error: Some(Error::NumericalError),
+                error: Some(Error::NumericalError(
+                    format!("Newton denominator is subnormal: {dfx}", dfx=dfx)
+                )),
             };
         }
         x -= fx / dfx;
@@ -164,7 +145,9 @@ pub fn halley<F>(f: F, guess: f64, max_iter: usize, tol: f64) -> RootFinding1d
                 x,
                 fx,
                 niter,
-                error: Some(Error::NumericalError),
+                error: Some(Error::NumericalError(
+                    format!("Halley denominator is subnormal: {denom}", denom=denom))
+                ),
             };
         }
         x -= (2. * fx * dfx) / denom;
