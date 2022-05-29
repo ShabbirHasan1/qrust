@@ -15,8 +15,3 @@ special = "^0.8.1"
 [dependencies.ndarray]
 version = "^0.15.0"
 features = ["rayon", "serde", "approx"]
-
-[dependencies.ndarray-linalg]
-version = "^0.14"
-default_features = true
-features = []  # "intel-mkl"]
