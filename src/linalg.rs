@@ -2,6 +2,13 @@
 //! Linear algebra tools
 pub use ndarray::prelude::*;
 
+/// Represents the L2 norm, i.e. the square-root of the sum of the squares
+///
+/// # Arguments
+///  * `v` - the vector, of any (finite) dimension
+///
+/// # Returns
+/// The L2 norm of that vector.
 pub fn l2_norm<Ix: Dimension>(v: &Array<f64, Ix>) -> f64 {
     v.into_iter().map(|&x| x*x).sum::<f64>().sqrt()
 }

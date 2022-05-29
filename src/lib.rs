@@ -3,6 +3,8 @@
 //!
 //! This library is a collection of miscellaneous numerical/quantitative tools for Rust
 
+pub mod cov;
+pub mod kalman;
 pub mod linalg;
 pub mod optim;
 pub mod pricing;
