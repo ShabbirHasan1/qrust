@@ -126,6 +126,7 @@ pub fn sqrt_denman_beavers<F>(
     }
 }
 
+
 #[cfg(test)]
 mod tests {
     use super::*;
