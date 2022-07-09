@@ -1,8 +1,8 @@
 //! Definition of a marginal distribution of probability
-use std::f64::consts::{FRAC_1_SQRT_2, FRAC_2_SQRT_PI, LN_2, PI, SQRT_2};
-use special::Error;
-use crate::special::softplus;
 use super::Proba;
+use crate::special::softplus;
+use special::Error;
+use std::f64::consts::{FRAC_1_SQRT_2, FRAC_2_SQRT_PI, LN_2, PI, SQRT_2};
 
 /// 1 / (sqrt(2 * pi))
 const FRAC_1_SQRT_2_PI: f64 = FRAC_2_SQRT_PI * FRAC_1_SQRT_2 / 2.0;
@@ -187,10 +187,7 @@ pub trait Marginal {
     /// // The 2.5th percentile is approximatively -1.96 (to two decimal places)
     /// assert!((n.quantile(Proba::from_f64(0.025)) + 1.96).abs() < 1e-2);
     /// ```
-    fn quantile(&self, p: Proba) -> f64;
-    fn quantile_f64(&self, f: f64) -> Result<f64, <Proba as TryFrom<f64>>::Error> {
-        Proba::try_from(f).map(|p| self.quantile(p))
-    }
+    fn quantile<P: Into<Proba>>(&self, p: P) -> f64;
     /// The median is simply an alias for the 50th percentile.
     ///
     /// # Example
@@ -253,8 +250,8 @@ pub trait Marginal {
     /// assert_eq!(s.cdf(3.5), 1.0);
     /// ```
     fn shift(self, shift: f64) -> Shifted<Self>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         Shifted { base: self, shift }
     }
@@ -292,8 +289,8 @@ pub trait Marginal {
     /// assert_eq!(i.std(), 6.0);
     /// ```
     fn scale(self, scale: f64) -> Scaled<Self>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         Scaled { base: self, scale }
     }
@@ -339,7 +336,7 @@ impl<D: Marginal> Marginal for Shifted<D> {
     fn cdf(&self, x: f64) -> Proba {
         self.base.cdf(x - self.shift)
     }
-    fn quantile(&self, p: Proba) -> f64 {
+    fn quantile<P: Into<Proba>>(&self, p: P) -> f64 {
         self.base.quantile(p) + self.shift
     }
     fn median(&self) -> f64 {
@@ -385,7 +382,7 @@ impl<D: Marginal> Marginal for Scaled<D> {
     fn cdf(&self, x: f64) -> Proba {
         self.base.cdf(x / self.scale)
     }
-    fn quantile(&self, p: Proba) -> f64 {
+    fn quantile<P: Into<Proba>>(&self, p: P) -> f64 {
         self.base.quantile(p) * self.scale
     }
     fn median(&self) -> f64 {
@@ -439,18 +436,14 @@ impl Marginal for Uniform01 {
     fn cdf(&self, x: f64) -> Proba {
         if x < 0.0 {
             Proba::ZERO
-        } else if x > 1.0 {
-            Proba::ONE
+        } else if let Ok(p) = Proba::try_from(x) {
+            p
         } else {
-            if let Ok(p) = Proba::try_from(x) {
-                p
-            } else {
-                unreachable!("Invalid probability")
-            }
+            Proba::ONE
         }
     }
-    fn quantile(&self, p: Proba) -> f64 {
-        p.into()
+    fn quantile<P: Into<Proba>>(&self, p: P) -> f64 {
+        p.into().into()
     }
     fn median(&self) -> f64 {
         0.5
@@ -519,8 +512,8 @@ impl Marginal for StandardNormal {
     fn cdf(&self, x: f64) -> Proba {
         Proba::try_from(0.5 * (1. + (x * FRAC_1_SQRT_2).error())).expect("unreachable")
     }
-    fn quantile(&self, p: Proba) -> f64 {
-        SQRT_2 * (2. * p.as_f64() - 1.).inv_error()
+    fn quantile<P: Into<Proba>>(&self, p: P) -> f64 {
+        SQRT_2 * (2. * p.into().as_f64() - 1.).inv_error()
     }
     fn median(&self) -> f64 {
         0.0
@@ -625,11 +618,11 @@ impl Marginal for LogNormal {
         if x <= 0.0 {
             return Proba::ZERO;
         }
-        Proba::from_f64((((x.ln() - self.mu()) / (SQRT_2 * self.sigma())).error() + 1.) / 2.)
+        Proba::from((((x.ln() - self.mu()) / (SQRT_2 * self.sigma())).error() + 1.) / 2.)
     }
     /// quantile of the distribution
-    fn quantile(&self, q: Proba) -> f64 {
-        (self.mu() + SQRT_2 * self.sigma() * (2. * q.as_f64() - 1.).inv_error()).exp()
+    fn quantile<P: Into<Proba>>(&self, q: P) -> f64 {
+        (self.mu() + SQRT_2 * self.sigma() * (2. * q.into().as_f64() - 1.).inv_error()).exp()
     }
     /// Median of the distribution
     fn median(&self) -> f64 {
@@ -682,7 +675,7 @@ pub fn normal(mu: f64, sigma: f64) -> Normal {
 /// assert_eq!(u.cdf(10.0), 0.0);
 /// assert_eq!(u.cdf(17.0), 0.7);
 /// assert_eq!(u.cdf(20.0), 1.0);
-/// assert_eq!(u.quantile_f64(0.25).unwrap(), 12.5);
+/// assert_eq!(u.quantile(0.25), 12.5);
 /// ```
 pub fn uniform(a: f64, b: f64) -> impl Marginal {
     Uniform::new(a, b)
@@ -762,7 +755,7 @@ mod tests {
     }
     #[test]
     fn lognormal_median() {
-        let ln = LogNormal::new(0.3,  0.8);
+        let ln = LogNormal::new(0.3, 0.8);
         assert_eq!(ln.cdf(0.3_f64.exp()), 0.5);
         assert_eq!(ln.median(), 0.3_f64.exp());
     }

@@ -3,8 +3,9 @@
 //!
 //! This library is a collection of miscellaneous numerical/quantitative tools for Rust
 
+extern crate core;
+
 pub mod cov;
-pub mod kalman;
 pub mod linalg;
 pub mod optim;
 pub mod pricing;
@@ -49,9 +50,9 @@ mod testing {
         assert_identity(&y.dot(x), tol);
     }
     pub(crate) fn assert_allclose<T>(x: &T, y: &T, tol: T::Epsilon) -> ()
-        where
-            T: AbsDiffEq + std::fmt::Debug,
-            T::Epsilon: Copy + std::fmt::Display,
+    where
+        T: AbsDiffEq + std::fmt::Debug,
+        T::Epsilon: Copy + std::fmt::Display,
     {
         assert!(
             x.abs_diff_eq(y, tol),

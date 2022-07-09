@@ -40,62 +40,8 @@
 //! assert_eq!(6. * m - 2.5, v.mean());
 //! assert_eq!(6. * s, v.std());
 //! ```
-use std::cmp::Ordering;
-use std::convert::TryFrom;
 
-/// Represents a probability in [0; 1]
-/// TODO: make this an integer or something
-#[derive(Clone, Copy, Debug)]
-pub struct Proba(f64);
-impl Proba {
-    /// The Half probability
-    pub const HALF: Proba = Proba(0.5);
-    /// The One (100%) probability
-    pub const ONE: Proba = Proba(1.0);
-    /// The Zero (0.0%) probability
-    pub const ZERO: Proba = Proba(0.0);
-    /// The complement to 1 of the probability
-    pub fn complement(&self) -> Proba {
-        Proba(1.0 - self.0)
-    }
-    /// Conversion to a float64
-    pub fn as_f64(&self) -> f64 {
-        self.0
-    }
-    pub fn from_f64(x: f64) -> Proba {
-        Self::try_from(x).expect("Invalid value")
-    }
-}
-impl TryFrom<f64> for Proba {
-    type Error = String;
-    fn try_from(value: f64) -> Result<Self, Self::Error> {
-        if value >= 0.0 && value <= 1.0 {
-            Ok(Proba(value))
-        } else {
-            Err(format!("Invalid probability: {}", value))
-        }
-    }
-}
-impl Into<f64> for Proba {
-    fn into(self) -> f64 {
-        self.as_f64()
-    }
-}
-impl PartialEq<f64> for Proba {
-    fn eq(&self, other: &f64) -> bool {
-        self.0.eq(other)
-    }
-}
-impl PartialEq<Proba> for Proba {
-    fn eq(&self, other: &Proba) -> bool {
-        self.eq(&other.0)
-    }
-}
-impl PartialOrd<Proba> for Proba {
-    fn partial_cmp(&self, other: &Proba) -> Option<Ordering> {
-        self.0.partial_cmp(&other.0)
-    }
-}
-
+mod proba;
+pub use proba::*;
 mod marginal;
 pub use marginal::*;
