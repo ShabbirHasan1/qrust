@@ -1,9 +1,8 @@
 //! Kalman filters
-use ndarray::prelude::*;
-use qrust::cov::Covariance;
-
-/// Updates the provided state to take into account the given observation
-/// 
+// use crate::cov::Covariance;
+// use ndarray::prelude::*;
+//
+// /// Updates the provided state to take into account the given observation
 // pub fn observe_linear(
 //     state_estimate: &mut Array1<f64>,
 //     state_noise: &mut Covariance,
@@ -11,5 +10,4 @@ use qrust::cov::Covariance;
 //     observation_model: &Array2<f64>,
 //     observation_noise: &Covariance,
 // ) -> Result<(), ()> {
-//
 // }

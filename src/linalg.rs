@@ -1,5 +1,6 @@
 //! Miscellaneous linear algebra tools
 //! Linear algebra tools
+use crate::iterative::Iterative;
 pub use ndarray::prelude::*;
 
 /// Represents the L2 norm, i.e. the square-root of the sum of the squares
@@ -10,7 +11,26 @@ pub use ndarray::prelude::*;
 /// # Returns
 /// The L2 norm of that vector.
 pub fn l2_norm<Ix: Dimension>(v: &Array<f64, Ix>) -> f64 {
-    v.into_iter().map(|&x| x*x).sum::<f64>().sqrt()
+    v.into_iter().map(|&x| x * x).sum::<f64>().sqrt()
+}
+
+/// Newton method for inversing a matrix
+pub struct InverseNewton<'a> {
+    /// The matrix being inverted
+    mat: &'a Array2<f64>,
+    /// The current guess for the inverse
+    guess: &'a mut Array2<f64>,
+}
+
+impl<'a> Iterative for InverseNewton<'a> {
+    /// Iterates `n` times
+    fn iterate_n(&mut self, n: usize) -> () {
+        for _ in 0..n {
+            let bfr = self.guess.dot(self.mat).dot(self.guess);
+            *self.guess *= 2.0;
+            *self.guess -= &bfr;
+        }
+    }
 }
 
 /// Newton's method for the inversion of a matrix, starting from a good initial guess
@@ -33,25 +53,24 @@ pub fn inverse_newton<F>(
     norm: F,
     tol: f64,
 ) -> Result<(usize, f64), f64>
-    where
-        F: Fn(&Array2<f64>) -> f64,
+where
+    F: Fn(&Array2<f64>) -> f64,
 {
-    let mut bfr: Array2<f64> = guess.dot(mat);
-    bfr.diag_mut().map_inplace(|x| *x -= 1.0);
-    let mut diff = norm(&bfr);
-    for iter in 0..max_iter {
+    let mut inverser = InverseNewton { mat, guess };
+    let mut diff = 0.0;
+    for (iter, d) in inverser
+        .iter(move |inv: &InverseNewton| {
+            let mut bfr = inv.guess.dot(inv.mat);
+            bfr.diag_mut().map_inplace(|x| *x -= 1.0);
+            norm(&bfr)
+        })
+        .take(max_iter)
+        .enumerate()
+    {
+        diff = d;
         if diff < tol {
             return Ok((iter, diff));
         }
-        bfr = guess.dot(mat).dot(guess);
-        *guess *= 2.0;
-        *guess -= &bfr;
-        bfr = guess.dot(mat);
-        bfr.diag_mut().map_inplace(|x| *x -= 1.0);
-        diff = norm(&bfr);
-    }
-    if diff < tol {
-        return Ok((max_iter, diff));
     }
     Err(diff)
 }
@@ -84,8 +103,8 @@ pub fn sqrt_denman_beavers<F>(
     norm: F,
     tol: f64,
 ) -> Result<(usize, f64, f64), (usize, f64, f64)>
-    where
-        F: Fn(&Array2<f64>) -> f64,
+where
+    F: Fn(&Array2<f64>) -> f64,
 {
     // TODO: exploit initial guesses
     let n = mat.shape()[0];
@@ -126,7 +145,6 @@ pub fn sqrt_denman_beavers<F>(
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -162,19 +180,11 @@ mod tests {
     fn test_sqrt_denman_beavers() {
         for mat in matrices() {
             let mut inv = Array2::eye(2);
-            inverse_newton(&mat, &mut inv, MAX_ITER, l2_norm, TOL)
-                .expect("Failed to take inverse");
+            inverse_newton(&mat, &mut inv, MAX_ITER, l2_norm, TOL).expect("Failed to take inverse");
             let mut sqrt = Array2::eye(2);
             let mut isqrt = Array2::eye(2);
             match sqrt_denman_beavers(
-                &mat,
-                &inv,
-                &mut sqrt,
-                &mut isqrt,
-                MAX_ITER,
-                MAX_ITER,
-                l2_norm,
-                TOL,
+                &mat, &inv, &mut sqrt, &mut isqrt, MAX_ITER, MAX_ITER, l2_norm, TOL,
             ) {
                 Ok((niter, tol_sqrt, tol_inv)) => {
                     assert!(niter <= MAX_ITER);

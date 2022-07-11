@@ -6,6 +6,8 @@
 extern crate core;
 
 pub mod cov;
+pub mod filtering;
+pub mod iterative;
 pub mod linalg;
 pub mod optim;
 pub mod pricing;
